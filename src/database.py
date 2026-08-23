@@ -124,3 +124,17 @@ def insert_sample_data():
     connection.close()
 
     print("Sample data inserted successfully!")
+
+def execute_query(sql):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(sql)
+
+    results = cursor.fetchall()
+
+    column_names = [description[0] for description in cursor.description]
+
+    connection.close()
+
+    return column_names, results

@@ -3,10 +3,12 @@ from src.clarification import check_ambiguity
 
 questions = [
     "Show me the top customers",
-    "Who are the best customers?",
-    "Show me the highest-selling products",
     "Show me customers from Mumbai",
-    "Show me all products"
+    "How many customers do we have?",
+    "Show me the highest selling products",
+    "Show me sales",
+    "Show me all products",
+    "Which customer spent the most?"
 ]
 
 

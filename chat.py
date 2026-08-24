@@ -1,6 +1,7 @@
-from src.clarification import check_ambiguity
+from src.clarification import check_ambiguity,resolve_question
 from src.sql_generator import generate_sql
 from src.database import execute_query
+from src.sql_validator import validate_sql
 
 
 def main():
@@ -12,8 +13,12 @@ def main():
         print("\nClarification:", clarification["question"])
 
         answer = input("\nYour answer: ")
+        question=resolve_question(
+            question,
+            clarification["question"],
+            answer
+        )
 
-        question = question + " " + answer
 
     print("\nResolved question:")
     print(question)
@@ -22,6 +27,15 @@ def main():
 
     print("\nGenerated SQL:")
     print(sql)
+
+    valid, message=validate_sql(sql)
+    if not valid:
+        print("\nSQL Validation Failed:")
+        print(message)
+        return
+
+    print("\nSQL Validation:")
+    print(message)
 
     columns, results = execute_query(sql)
 

@@ -1,0 +1,6 @@
+{
+    "Show me all customers": "SELECT * FROM customers;",
+    "Show me customers from Mumbai": "SELECT * FROM customers WHERE city = 'Mumbai';",
+    "Show me all products": "SELECT * FROM products;",
+    "Show me sales": "SELECT * FROM orders;"
+}

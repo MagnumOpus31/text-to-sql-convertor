@@ -1,0 +1,12 @@
+{
+    "Show me all customers": "SELECT * FROM customers;",
+    "Show me customers from Mumbai": "SELECT * FROM customers WHERE city = 'Mumbai';",
+    "How many customers do we have?": "SELECT COUNT(*) FROM customers;",
+    "Show me all products": "SELECT * FROM products;",
+    "Show me the top customers ranked by total spending.": "SELECT \n    c.customer_id,\n    c.name,\n    SUM(o.total_amount) AS total_spending\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nGROUP BY c.customer_id, c.name\nORDER BY total_spending DESC;",
+    "Show me the products ranked by total sales revenue.": "SELECT \n    p.product_id,\n    p.product_name,\n    SUM(oi.quantity * oi.unit_price) AS total_revenue,\n    RANK() OVER (ORDER BY SUM(oi.quantity * oi.unit_price) DESC) AS rank\nFROM products p\nJOIN order_items oi ON p.product_id = oi.product_id\nGROUP BY p.product_id, p.product_name\nORDER BY rank;",
+    "Show me total sales revenue.": "SELECT SUM(total_amount) AS total_revenue FROM orders;",
+    "Which customer spent the most?": "SELECT c.customer_id, c.name, SUM(o.total_amount) AS total_spent FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id, c.name ORDER BY total_spent DESC LIMIT 1;",
+    "How many products are there?": "SELECT COUNT(*) FROM products;",
+    "Show products in the electronics category": "SELECT * FROM products WHERE category = 'electronics';"
+}

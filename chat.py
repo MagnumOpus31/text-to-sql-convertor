@@ -1,6 +1,7 @@
 from src.clarification import check_ambiguity,resolve_question
 from src.sql_generator import generate_sql
 from src.database import execute_query
+from src.sql_corrector import correct_sql
 from src.sql_validator import validate_sql
 
 
@@ -32,10 +33,29 @@ def main():
     if not valid:
         print("\nSQL Validation Failed:")
         print(message)
-        return
+        print("\nAttempting SQL correction...")
 
-    print("\nSQL Validation:")
-    print(message)
+        corrected_sql=correct_sql(
+            question,
+            sql,
+            message
+        )
+        print("\nCorrected SQL:")
+        print(corrected_sql)
+
+        valid, message = validate_sql(corrected_sql)
+        print("\nCorrected SQL Validation:")
+        print(message)
+
+        if not valid:
+            print("Corrected SQL is still invalid")
+            return
+        sql=corrected_sql
+
+    else:
+        print("\nSQL Validation:")
+        print(message)
+
 
     columns, results = execute_query(sql)
 

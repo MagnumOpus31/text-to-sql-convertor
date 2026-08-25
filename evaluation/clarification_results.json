@@ -1,0 +1,42 @@
+{
+    "Show me all customers": {
+        "ambiguous": false,
+        "question": null
+    },
+    "Show me customers from Mumbai": {
+        "ambiguous": false,
+        "question": null
+    },
+    "How many customers do we have?": {
+        "ambiguous": false,
+        "question": null
+    },
+    "Show me all products": {
+        "ambiguous": false,
+        "question": null
+    },
+    "Show me the top customers": {
+        "ambiguous": true,
+        "question": "Would you like to rank the customers by total spending or number of orders?"
+    },
+    "Show me the highest selling products": {
+        "ambiguous": true,
+        "question": "Do you want to rank products by quantity sold or total sales revenue?"
+    },
+    "Show me sales": {
+        "ambiguous": true,
+        "question": "Would you like to see total sales revenue, a list of individual orders, or sales grouped by product or date?"
+    },
+    "Which customer spent the most?": {
+        "ambiguous": false,
+        "question": null
+    },
+    "How many products are there?": {
+        "ambiguous": false,
+        "question": null
+    },
+    "Show products in the electronics category": {
+        "ambiguous": false,
+        "question": null
+    }
+}

@@ -2,5 +2,11 @@
     "Show me all customers": "SELECT * FROM customers;",
     "Show me customers from Mumbai": "SELECT * FROM customers WHERE city = 'Mumbai';",
     "Show me all products": "SELECT * FROM products;",
-    "Show me sales": "SELECT * FROM orders;"
+    "Show me sales": "SELECT * FROM orders;",
+    "How many customers do we have?": "SELECT COUNT(*) FROM customers;",
+    "Show me the top customers": "SELECT c.customer_id, c.name, SUM(o.total_amount) AS total_spent\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nGROUP BY c.customer_id, c.name\nORDER BY total_spent DESC\nLIMIT 5;",
+    "Show me the highest selling products": "SELECT \n    p.product_id, \n    p.product_name, \n    SUM(oi.quantity) AS total_quantity_sold\nFROM products p\nJOIN order_items oi ON p.product_id = oi.product_id\nGROUP BY p.product_id, p.product_name\nORDER BY total_quantity_sold DESC;",
+    "Which customer spent the most?": "SELECT c.customer_id, c.name, SUM(o.total_amount) AS total_spent\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nGROUP BY c.customer_id, c.name\nORDER BY total_spent DESC\nLIMIT 1;",
+    "How many products are there?": "SELECT COUNT(*) FROM products;",
+    "Show products in the electronics category": "SELECT * FROM products WHERE category = 'electronics';"
 }

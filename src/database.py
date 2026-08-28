@@ -129,12 +129,14 @@ def execute_query(sql):
     connection = get_connection()
     cursor = connection.cursor()
 
-    cursor.execute(sql)
+    try:
+        cursor.execute(sql)
 
-    results = cursor.fetchall()
+        results = cursor.fetchall()
 
-    column_names = [description[0] for description in cursor.description]
+        column_names = [description[0] for description in cursor.description]
 
-    connection.close()
+        return column_names, results
 
-    return column_names, results
+    finally:
+        connection.close

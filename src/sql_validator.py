@@ -1,11 +1,13 @@
+import sqlite3
+from src.database import get_connection
+
+
 def validate_sql(sql):
     sql = sql.strip().lower()
 
-    # Only allow SELECT queries
     if not sql.startswith("select"):
         return False, "Only SELECT queries are allowed."
 
-    # Block dangerous SQL operations
     forbidden_keywords = [
         "insert",
         "update",
@@ -20,4 +22,15 @@ def validate_sql(sql):
         if keyword in sql:
             return False, f"Forbidden SQL operation detected: {keyword}"
 
-    return True, "SQL is valid."
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute(sql)
+
+        connection.close()
+
+        return True, "SQL is valid."
+
+    except sqlite3.Error as e:
+        return False, str(e)

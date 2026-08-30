@@ -1,7 +1,9 @@
 import os
+import json
+
 from dotenv import load_dotenv
 from google import genai
-import json
+
 
 load_dotenv()
 
@@ -16,31 +18,69 @@ client = genai.Client(api_key=api_key)
 def detect_intent(question):
 
     prompt = f"""
-You are an intent classification system for a natural-language database assistant.
+You are an intent detection system for a Text-to-SQL application.
 
-Determine what the user wants to do with the database.
-
-User question:
-{question}
+Determine what the user wants to do.
 
 Possible intents:
 
-1. READ
-   The user only wants to retrieve or view information.
+READ
+CREATE_TABLE
+INSERT
 
-   Examples:
-   - Show me all customers
-   - How many products are there?
-   - Show me customers from Mumbai
-   - Which customer spent the most?
+Definitions:
 
-2. CREATE_TABLE
-   The user explicitly wants to create a new database table.
+READ:
+The user wants to retrieve, search, count, filter, sort,
+or analyze existing data.
 
-   Examples:
-   - Create a table called employees
-   - Create an employees table with id, name and salary
-   - Add a new table called departments
+CREATE_TABLE:
+The user wants to create a new database table.
+
+INSERT:
+The user wants to add new records/data into an existing table.
+
+Examples:
+
+User:
+Show me all customers
+Intent:
+READ
+
+User:
+How many products are there?
+Intent:
+READ
+
+User:
+Which customer spent the most?
+Intent:
+READ
+
+User:
+Create a table called employees
+Intent:
+CREATE_TABLE
+
+User:
+Create an employees table with id, name and salary
+Intent:
+CREATE_TABLE
+
+User:
+Add Rahul to employees with employee_id 1 and salary 75000
+Intent:
+INSERT
+
+User:
+Insert a new employee named Priya into employees
+Intent:
+INSERT
+
+User:
+Add a product called Laptop with price 60000
+Intent:
+INSERT
 
 Return ONLY valid JSON in this exact format:
 
@@ -53,6 +93,15 @@ or:
 {{
     "intent": "CREATE_TABLE"
 }}
+
+or:
+
+{{
+    "intent": "INSERT"
+}}
+
+User question:
+{question}
 """
 
     response = client.models.generate_content(
@@ -62,7 +111,6 @@ or:
 
     result = response.text.strip()
 
-    # Remove markdown code fences if Gemini adds them
     if result.startswith("```json"):
         result = result[7:]
 
@@ -72,6 +120,4 @@ or:
     if result.endswith("```"):
         result = result[:-3]
 
-    result = result.strip()
-
-    return json.loads(result)
+    return json.loads(result.strip())

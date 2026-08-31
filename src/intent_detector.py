@@ -27,6 +27,8 @@ Possible intents:
 READ
 CREATE_TABLE
 INSERT
+UPDATE
+DELETE
 
 Definitions:
 
@@ -39,6 +41,13 @@ The user wants to create a new database table.
 
 INSERT:
 The user wants to add new records/data into an existing table.
+
+UPDATE:
+The user wants to modify existing records/data in an existing table.
+
+DELETE:
+DELETE:
+The user wants to remove existing records/data from an existing table.
 
 Examples:
 
@@ -54,6 +63,11 @@ READ
 
 User:
 Which customer spent the most?
+Intent:
+READ
+
+User:
+Show me employees from Engineering
 Intent:
 READ
 
@@ -82,6 +96,55 @@ Add a product called Laptop with price 60000
 Intent:
 INSERT
 
+User:
+Update Rahul's salary to 80000
+Intent:
+UPDATE
+
+User:
+Change employee 1 department to HR
+Intent:
+UPDATE
+
+User:
+Update the price of the Laptop to 65000
+Intent:
+UPDATE
+
+User:
+Delete employee 1
+Intent:
+DELETE
+
+User:
+Remove Rahul from employees
+Intent:
+DELETE
+
+User:
+Delete all products in the Electronics category
+Intent:
+DELETE
+
+User:
+Change Mumbai customers' city to Pune
+Intent:
+UPDATE
+
+Important distinction:
+
+INSERT means adding a NEW record.
+
+UPDATE means modifying an EXISTING record.
+
+For example:
+
+"Add Rahul to employees"
+=> INSERT
+
+"Change Rahul's salary"
+=> UPDATE
+
 Return ONLY valid JSON in this exact format:
 
 {{
@@ -98,6 +161,12 @@ or:
 
 {{
     "intent": "INSERT"
+}}
+
+or:
+
+{{
+    "intent": "UPDATE"
 }}
 
 User question:

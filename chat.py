@@ -9,6 +9,8 @@ from src.schema_generator import generate_create_table_sql
 from src.schema_validator import validate_create_table_sql
 from src.insert_generator import generate_insert_sql
 from src.insert_validator import validate_insert_sql
+from src.update_generator import generate_update_sql
+from src.update_validator import validate_update_sql
 
 
 def main():
@@ -166,6 +168,68 @@ def main():
 
         return
 
+        # ============================================================
+    # UPDATE PIPELINE
+    # ============================================================
+
+    if intent == "UPDATE":
+
+        print("\nResolved question:")
+        print(question)
+
+        print("\nGenerating UPDATE SQL...")
+
+        sql = generate_update_sql(question)
+
+        print("\nGenerated SQL:")
+        print(sql)
+
+        # --------------------------------------------------------
+        # Validate UPDATE SQL
+        # --------------------------------------------------------
+
+        valid, message = validate_update_sql(sql)
+
+        print("\nUPDATE Validation:")
+        print(message)
+
+        if not valid:
+
+            print("\nUPDATE SQL is invalid.")
+            return
+
+        # --------------------------------------------------------
+        # Ask for confirmation
+        # --------------------------------------------------------
+
+        print("\nWARNING:")
+        print("This operation will modify existing data.")
+
+        confirmation = input(
+            "\nDo you want to execute this SQL? (yes/no): "
+        ).strip().lower()
+
+        if confirmation not in ["yes", "y"]:
+
+            print("\nOperation cancelled.")
+            return
+
+        # --------------------------------------------------------
+        # Execute UPDATE
+        # --------------------------------------------------------
+
+        try:
+
+            execute_schema_query(sql)
+
+            print("\nRecord updated successfully!")
+
+        except Exception as error:
+
+            print("\nDatabase Execution Error:")
+            print(error)
+
+        return
     # ============================================================
     # READ PIPELINE
     # ============================================================

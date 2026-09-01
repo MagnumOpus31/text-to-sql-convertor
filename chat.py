@@ -1,16 +1,25 @@
 from src.clarification import check_ambiguity, resolve_question
 from src.sql_generator import generate_sql
-from src.database import execute_query, execute_schema_query
+from src.database import execute_query, execute_write_query
 from src.sql_corrector import correct_sql
 from src.sql_validator import validate_sql
+from src.sql_semantic_validator import validate_semantics
 from src.local_typo_corrector import correct_typos
 from src.intent_detector import detect_intent
+
 from src.schema_generator import generate_create_table_sql
 from src.schema_validator import validate_create_table_sql
+
 from src.insert_generator import generate_insert_sql
 from src.insert_validator import validate_insert_sql
+
 from src.update_generator import generate_update_sql
 from src.update_validator import validate_update_sql
+
+from src.delete_generator import generate_delete_sql
+from src.delete_validator import validate_delete_sql
+
+from src.operation_safety import check_operation_safety
 
 
 def main():
@@ -28,6 +37,7 @@ def main():
     corrected_question = correct_typos(question)
 
     if corrected_question != question:
+
         print("\nCorrected question:")
         print(corrected_question)
 
@@ -44,13 +54,36 @@ def main():
     print(intent)
 
     # ============================================================
+    # 4. Clarification
+    # ============================================================
+
+    clarification = check_ambiguity(question)
+
+    if clarification["ambiguous"]:
+
+        print("\nClarification:")
+        print(clarification["question"])
+
+        answer = input("\nYour answer: ")
+
+        question = resolve_question(
+            question,
+            clarification["question"],
+            answer
+        )
+
+    # ============================================================
+    # 5. Resolved question
+    # ============================================================
+
+    print("\nResolved question:")
+    print(question)
+
+    # ============================================================
     # CREATE TABLE PIPELINE
     # ============================================================
 
     if intent == "CREATE_TABLE":
-
-        print("\nResolved question:")
-        print(question)
 
         print("\nGenerating CREATE TABLE SQL...")
 
@@ -69,11 +102,12 @@ def main():
         print(message)
 
         if not valid:
+
             print("\nCREATE TABLE SQL is invalid.")
             return
 
         # --------------------------------------------------------
-        # Ask for confirmation
+        # Confirmation
         # --------------------------------------------------------
 
         print("\nWARNING:")
@@ -94,7 +128,7 @@ def main():
 
         try:
 
-            execute_schema_query(sql)
+            execute_write_query(sql)
 
             print("\nTable created successfully!")
 
@@ -110,9 +144,6 @@ def main():
     # ============================================================
 
     if intent == "INSERT":
-
-        print("\nResolved question:")
-        print(question)
 
         print("\nGenerating INSERT SQL...")
 
@@ -136,7 +167,7 @@ def main():
             return
 
         # --------------------------------------------------------
-        # Ask for confirmation
+        # Confirmation
         # --------------------------------------------------------
 
         print("\nWARNING:")
@@ -157,7 +188,7 @@ def main():
 
         try:
 
-            execute_schema_query(sql)
+            execute_write_query(sql)
 
             print("\nRecord inserted successfully!")
 
@@ -168,14 +199,11 @@ def main():
 
         return
 
-        # ============================================================
+    # ============================================================
     # UPDATE PIPELINE
     # ============================================================
 
     if intent == "UPDATE":
-
-        print("\nResolved question:")
-        print(question)
 
         print("\nGenerating UPDATE SQL...")
 
@@ -199,11 +227,25 @@ def main():
             return
 
         # --------------------------------------------------------
-        # Ask for confirmation
+        # Operation Safety Check
+        # --------------------------------------------------------
+
+        safety_result = check_operation_safety(sql)
+
+        print("\nOperation Safety:")
+        print(safety_result["message"])
+
+        if not safety_result["safe"]:
+
+            print("\nOperation blocked for safety.")
+            return
+
+        # --------------------------------------------------------
+        # Confirmation
         # --------------------------------------------------------
 
         print("\nWARNING:")
-        print("This operation will modify existing data.")
+        print("This operation will modify your database.")
 
         confirmation = input(
             "\nDo you want to execute this SQL? (yes/no): "
@@ -220,9 +262,9 @@ def main():
 
         try:
 
-            execute_schema_query(sql)
+            execute_write_query(sql)
 
-            print("\nRecord updated successfully!")
+            print("\nRecord(s) updated successfully!")
 
         except Exception as error:
 
@@ -230,126 +272,205 @@ def main():
             print(error)
 
         return
+
+    # ============================================================
+    # DELETE PIPELINE
+    # ============================================================
+
+    if intent == "DELETE":
+
+        print("\nGenerating DELETE SQL...")
+
+        sql = generate_delete_sql(question)
+
+        print("\nGenerated SQL:")
+        print(sql)
+
+        # --------------------------------------------------------
+        # Validate DELETE SQL
+        # --------------------------------------------------------
+
+        valid, message = validate_delete_sql(sql)
+
+        print("\nDELETE Validation:")
+        print(message)
+
+        if not valid:
+
+            print("\nDELETE SQL is invalid.")
+            return
+
+        # --------------------------------------------------------
+        # Operation Safety Check
+        # --------------------------------------------------------
+
+        safety_result = check_operation_safety(sql)
+
+        print("\nOperation Safety:")
+        print(safety_result["message"])
+
+        if not safety_result["safe"]:
+
+            print("\nOperation blocked for safety.")
+            return
+
+        # --------------------------------------------------------
+        # Strong Confirmation
+        # --------------------------------------------------------
+
+        print("\nWARNING:")
+        print("This operation will permanently delete data.")
+
+        confirmation = input(
+            "\nDo you want to permanently delete this data? (yes/no): "
+        ).strip().lower()
+
+        if confirmation not in ["yes", "y"]:
+
+            print("\nOperation cancelled.")
+            return
+
+        # --------------------------------------------------------
+        # Execute DELETE
+        # --------------------------------------------------------
+
+        try:
+
+            execute_write_query(sql)
+
+            print("\nRecord(s) deleted successfully!")
+
+        except Exception as error:
+
+            print("\nDatabase Execution Error:")
+            print(error)
+
+        return
+
     # ============================================================
     # READ PIPELINE
     # ============================================================
 
-    # ------------------------------------------------------------
-    # 4. Clarification
-    # ------------------------------------------------------------
+    if intent == "READ":
 
-    clarification = check_ambiguity(question)
+        # --------------------------------------------------------
+        # Generate SQL
+        # --------------------------------------------------------
 
-    if clarification["ambiguous"]:
+        sql = generate_sql(question)
 
-        print("\nClarification:")
-        print(clarification["question"])
+        print("\nGenerated SQL:")
+        print(sql)
 
-        answer = input("\nYour answer: ")
+        # --------------------------------------------------------
+        # Basic SQL validation
+        # --------------------------------------------------------
 
-        question = resolve_question(
-            question,
-            clarification["question"],
-            answer
-        )
-
-    # ------------------------------------------------------------
-    # 5. Resolved question
-    # ------------------------------------------------------------
-
-    print("\nResolved question:")
-    print(question)
-
-    # ------------------------------------------------------------
-    # 6. Generate SQL
-    # ------------------------------------------------------------
-
-    sql = generate_sql(question)
-
-    print("\nGenerated SQL:")
-    print(sql)
-
-    # ------------------------------------------------------------
-    # 7. Basic SQL validation
-    # ------------------------------------------------------------
-
-    valid, message = validate_sql(sql)
-
-    if not valid:
-
-        print("\nSQL Validation Failed:")
-        print(message)
-
-        print("\nAttempting SQL correction...")
-
-        corrected_sql = correct_sql(
-            question,
-            sql,
-            message
-        )
-
-        print("\nCorrected SQL:")
-        print(corrected_sql)
-
-        valid, message = validate_sql(corrected_sql)
-
-        print("\nCorrected SQL Validation:")
-        print(message)
+        valid, message = validate_sql(sql)
 
         if not valid:
 
-            print("\nCorrected SQL is still invalid.")
-            return
+            print("\nSQL Validation Failed:")
+            print(message)
 
-        sql = corrected_sql
+            print("\nAttempting SQL correction...")
 
-    else:
+            corrected_sql = correct_sql(
+                question,
+                sql,
+                message
+            )
 
-        print("\nSQL Validation:")
-        print(message)
+            print("\nCorrected SQL:")
+            print(corrected_sql)
 
-    # ============================================================
-    # 8. Execute READ query
-    # ============================================================
+            valid, message = validate_sql(corrected_sql)
 
-    try:
+            print("\nCorrected SQL Validation:")
+            print(message)
 
-        columns, results = execute_query(sql)
+            if not valid:
 
-    except Exception as error:
+                print("\nCorrected SQL is still invalid.")
+                return
 
-        print("\nDatabase Execution Error:")
-        print(error)
+            sql = corrected_sql
 
-        print("\nAttempting SQL correction...")
+        else:
 
-        corrected_sql = correct_sql(
+            print("\nSQL Validation:")
+            print(message)
+
+        # --------------------------------------------------------
+        # Semantic validation
+        # --------------------------------------------------------
+
+        semantic_result = validate_semantics(
             question,
-            sql,
-            str(error)
+            sql
         )
 
-        print("\nCorrected SQL:")
-        print(corrected_sql)
+        print("\nSemantic Validation:")
+        print(semantic_result)
+
+        if not semantic_result["correct"]:
+
+            print("\nSQL is semantically incorrect.")
+
+            print("Reason:")
+            print(semantic_result["reason"])
+
+            print("\nAttempting SQL correction...")
+
+            corrected_sql = correct_sql(
+                question,
+                sql,
+                semantic_result["reason"]
+            )
+
+            print("\nCorrected SQL:")
+            print(corrected_sql)
+
+            # ----------------------------------------------------
+            # Validate corrected SQL
+            # ----------------------------------------------------
+
+            valid, message = validate_sql(corrected_sql)
+
+            print("\nCorrected SQL Validation:")
+            print(message)
+
+            if not valid:
+
+                print("\nCorrected SQL is still invalid.")
+                return
+
+            # ----------------------------------------------------
+            # Validate corrected SQL semantics
+            # ----------------------------------------------------
+
+            corrected_semantic = validate_semantics(
+                question,
+                corrected_sql
+            )
+
+            print("\nCorrected SQL Semantic Validation:")
+            print(corrected_semantic)
+
+            if not corrected_semantic["correct"]:
+
+                print(
+                    "\nCorrected SQL is still "
+                    "semantically incorrect."
+                )
+
+                print(corrected_semantic["reason"])
+                return
+
+            sql = corrected_sql
 
         # --------------------------------------------------------
-        # Validate corrected SQL
-        # --------------------------------------------------------
-
-        valid, message = validate_sql(corrected_sql)
-
-        print("\nCorrected SQL Validation:")
-        print(message)
-
-        if not valid:
-
-            print("\nCorrected SQL is still invalid.")
-            return
-
-        sql = corrected_sql
-
-        # --------------------------------------------------------
-        # Try executing corrected SQL
+        # Execute READ query
         # --------------------------------------------------------
 
         try:
@@ -358,20 +479,91 @@ def main():
 
         except Exception as error:
 
-            print("\nCorrected SQL execution failed:")
+            print("\nDatabase Execution Error:")
             print(error)
-            return
+
+            print("\nAttempting SQL correction...")
+
+            corrected_sql = correct_sql(
+                question,
+                sql,
+                str(error)
+            )
+
+            print("\nCorrected SQL:")
+            print(corrected_sql)
+
+            # ----------------------------------------------------
+            # Validate corrected SQL
+            # ----------------------------------------------------
+
+            valid, message = validate_sql(corrected_sql)
+
+            print("\nCorrected SQL Validation:")
+            print(message)
+
+            if not valid:
+
+                print("\nCorrected SQL is still invalid.")
+                return
+
+            # ----------------------------------------------------
+            # Validate corrected SQL semantics
+            # ----------------------------------------------------
+
+            semantic_result = validate_semantics(
+                question,
+                corrected_sql
+            )
+
+            print("\nCorrected SQL Semantic Validation:")
+            print(semantic_result)
+
+            if not semantic_result["correct"]:
+
+                print(
+                    "\nCorrected SQL is still "
+                    "semantically incorrect."
+                )
+
+                print(semantic_result["reason"])
+                return
+
+            sql = corrected_sql
+
+            # ----------------------------------------------------
+            # Execute corrected SQL
+            # ----------------------------------------------------
+
+            try:
+
+                columns, results = execute_query(sql)
+
+            except Exception as error:
+
+                print("\nCorrected SQL execution failed:")
+                print(error)
+                return
+
+        # --------------------------------------------------------
+        # Display results
+        # --------------------------------------------------------
+
+        print("\nResults:")
+
+        print(columns)
+
+        for row in results:
+            print(row)
+
+        return
 
     # ============================================================
-    # 9. Display results
+    # UNKNOWN INTENT
     # ============================================================
 
-    print("\nResults:")
-
-    print(columns)
-
-    for row in results:
-        print(row)
+    print("\nUnsupported intent:")
+    print(intent)
 
 
 if __name__ == "__main__":

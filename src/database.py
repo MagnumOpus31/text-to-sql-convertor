@@ -141,6 +141,18 @@ def execute_query(sql):
     finally:
         connection.close
 
+def execute_write_query(sql):
+
+    conn = sqlite3.connect(DATABASE_PATH)
+
+    cursor = conn.cursor()
+
+    cursor.execute(sql)
+
+    conn.commit()
+
+    conn.close()
+
 def execute_schema_query(sql):
     connection = get_connection()
     cursor = connection.cursor()

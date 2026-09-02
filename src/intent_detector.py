@@ -169,6 +169,12 @@ or:
     "intent": "UPDATE"
 }}
 
+or:
+
+{{
+    "intent": "DELETE"
+}}
+
 User question:
 {question}
 """

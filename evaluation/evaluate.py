@@ -73,7 +73,7 @@ def evaluate_baseline():
             print("Using cached SQL.")
 
         else:
-            print("Calling Gemini API...")
+            print("Calling local Qwen via Ollama...")
 
             try:
                 generated_sql = generate_sql(question)
@@ -82,7 +82,7 @@ def evaluate_baseline():
                 save_cache(cache)
 
             except Exception as e:
-                print("Gemini API error:", e)
+                print("Ollama error:", e)
                 print("Skipping this test.")
                 continue
 

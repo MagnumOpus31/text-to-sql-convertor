@@ -1,105 +1,256 @@
+from src.ollama_client import generate_ollama_response
 
-from src.gemini_client import generate_gemini_response
-from src.database import get_database_schema
 
 def check_ambiguity(question):
+    question_lower = question.lower().strip()
 
-    # --------------------------------
-    # Get current database schema
-    # --------------------------------
+    # ---------------------------------------------------------
+    # UPDATE requests
+    # ---------------------------------------------------------
+    # A request such as:
+    # "Update customer 3"
+    #
+    # identifies the record but does NOT specify what to change.
+    # Therefore clarification is required.
+    #
+    # A request such as:
+    # "Update customer 3 city to Mumbai"
+    #
+    # contains both the record and the requested modification,
+    # so it is clear.
+    # ---------------------------------------------------------
 
-    schema = get_database_schema()
+    update_specific_match = None
 
-    schema_text = ""
+    update_specific_patterns = [
+        r"^(?:update|change)\s+"
+        r"(customer|employee|product|order)\s+"
+        r"(\d+)(?:\s+(.*))?$"
+    ]
 
-    for table, columns in schema.items():
-        schema_text += f"{table}(\n"
-        schema_text += "    " + ", ".join(columns) + "\n"
-        schema_text += ")\n"
+    import re
 
-    # --------------------------------
-    # Clarification prompt
-    # --------------------------------
+    for pattern in update_specific_patterns:
+        update_specific_match = re.match(
+            pattern,
+            question_lower,
+            re.IGNORECASE
+        )
+
+        if update_specific_match:
+            break
+
+    if update_specific_match:
+        entity = update_specific_match.group(1)
+        record_id = update_specific_match.group(2)
+        update_details = update_specific_match.group(3)
+
+        # No field/value was provided.
+        if not update_details or not update_details.strip():
+            return {
+                "ambiguous": True,
+                "question": (
+                    f"What would you like to update for "
+                    f"{entity} {record_id}?"
+                )
+            }
+
+        # An update instruction was provided.
+        return {
+            "ambiguous": False,
+            "question": None
+        }
+
+    # ---------------------------------------------------------
+    # Specific DELETE requests
+    # ---------------------------------------------------------
+
+    specific_delete_patterns = [
+        "delete customer ",
+        "delete employee ",
+        "delete product ",
+        "delete order ",
+        "remove customer ",
+        "remove employee ",
+        "remove product ",
+        "remove order "
+    ]
+
+    if any(
+        question_lower.startswith(pattern)
+        for pattern in specific_delete_patterns
+    ):
+        return {
+            "ambiguous": False,
+            "question": None
+        }
+
+    # ---------------------------------------------------------
+    # Explicit ALL operations
+    # ---------------------------------------------------------
+
+    explicit_scope_patterns = [
+        "delete all ",
+        "delete every ",
+        "remove all ",
+        "remove every ",
+        "update all ",
+        "update every "
+    ]
+
+    if any(
+        pattern in question_lower
+        for pattern in explicit_scope_patterns
+    ):
+        return {
+            "ambiguous": False,
+            "question": None
+        }
+
+    # ---------------------------------------------------------
+    # Clear read queries
+    # ---------------------------------------------------------
+
+    clear_read_patterns = [
+        "show me all ",
+        "show all ",
+        "list all ",
+        "list ",
+        "show ",
+        "get all ",
+        "get ",
+        "find all ",
+        "find "
+    ]
+
+    ranking_indicators = [
+        "top ",
+        "highest ",
+        "lowest ",
+        "best ",
+        "worst "
+    ]
+
+    ranking_metrics = [
+        "total spending",
+        "total sales",
+        "number of orders",
+        "orders",
+        "revenue",
+        "quantity sold",
+        "total quantity",
+        "price",
+        "salary"
+    ]
+
+    has_read_pattern = any(
+        question_lower.startswith(pattern)
+        for pattern in clear_read_patterns
+    )
+
+    has_ranking = any(
+        indicator in question_lower
+        for indicator in ranking_indicators
+    )
+
+    has_metric = any(
+        metric in question_lower
+        for metric in ranking_metrics
+    )
+
+    if has_read_pattern and has_ranking and has_metric:
+        return {
+            "ambiguous": False,
+            "question": None
+        }
+
+    # ---------------------------------------------------------
+    # Clear filtered read queries
+    # ---------------------------------------------------------
+
+    filter_indicators = [
+        "from ",
+        "where ",
+        "in ",
+        "with ",
+        "whose ",
+        "having "
+    ]
+
+    if has_read_pattern and any(
+        indicator in question_lower
+        for indicator in filter_indicators
+    ):
+        return {
+            "ambiguous": False,
+            "question": None
+        }
+
+    # ---------------------------------------------------------
+    # LLM-based ambiguity detection
+    # ---------------------------------------------------------
 
     prompt = f"""
-You are a clarification engine for a Text-to-SQL system.
+You are an SQL query clarification assistant.
 
-Your job is to determine whether the user's question contains
-enough information to generate a reliable SQLite SQL query.
-
-Database schema:
-{schema_text}
+Determine whether the user's question is ambiguous or whether there is
+enough information to generate SQL.
 
 User question:
 {question}
 
-Determine whether the question is ambiguous.
+Rules:
 
-If the question is clear, return exactly:
+1. Return exactly CLEAR if the question is specific enough to generate SQL.
+2. If clarification is genuinely required, return ONLY one concise
+   clarification question.
+3. Do not rewrite or repeat the user's question.
+4. Do not ask for confirmation.
+5. Do not treat DELETE, UPDATE, INSERT, or CREATE TABLE as ambiguous
+   merely because they modify the database.
+6. If the user explicitly specifies "all", "every", or an equivalent
+   phrase, the scope is clear.
+7. "Delete all customers" is CLEAR.
+8. "Delete customer 3" is CLEAR.
+9. "Delete Rahul from employees" is CLEAR.
+10. "Update customer 3" is NOT clear because the user has not specified
+    what should be changed.
+11. For "Update customer 3", ask:
+    What would you like to update for customer 3?
+12. "Update customer 3 city to Mumbai" is CLEAR.
+13. "Show me all customers" is CLEAR.
+14. "Show me customers from Mumbai" is CLEAR.
+15. "Show me the top 3 customers by total spending" is CLEAR.
+16. "Show me the top 5 products by quantity sold" is CLEAR.
+17. "Show me the top customers" is ambiguous because the ranking
+    metric is not specified.
+18. "Show me sales" may require clarification if the requested metric
+    or grouping is unclear.
 
-CLEAR
-
-If the question is ambiguous, return a concise clarification
-question that asks for the missing information.
-
-Important rules:
-
-1. Use the database schema above to understand what tables
-   and columns actually exist.
-
-2. Do NOT claim that a table does not exist if it is present
-   in the database schema.
-
-3. Only ask for clarification when the user's request is
-   genuinely ambiguous.
-
-4. Do not ask unnecessary clarification questions.
-
-Examples:
-
-User: Show me the top customers
-Response:
-Would you like to rank the customers by total spending or number of orders?
-
-User: Show me customers from Mumbai
-Response:
-CLEAR
-
-User: Show me the highest selling products
-Response:
-Do you want to rank products by total quantity sold or total sales revenue?
-
-User: How many customers do we have?
-Response:
-CLEAR
-
-User: Show me all employees
-Response:
-CLEAR
-
-Return ONLY either:
+Return ONLY:
 
 CLEAR
 
-or the clarification question.
+or one concise clarification question.
 """
 
-    # --------------------------------
-    # Call Gemini
-    # --------------------------------
+    result = generate_ollama_response(prompt).strip()
 
-    result = generate_gemini_response(
-        prompt,
-        model="gemini-3.6-flash",
-    ).strip();
+    normalized = result.upper()
 
-    
+    clear_indicators = [
+        "CLEAR",
+        "IS CLEAR",
+        "ENOUGH INFORMATION",
+        "ENOUGH INFORMATION TO GENERATE",
+        "NO CLARIFICATION",
+        "NO NEED FOR CLARIFICATION"
+    ]
 
-    # --------------------------------
-    # Process result
-    # --------------------------------
-
-    if result == "CLEAR":
+    if any(
+        indicator in normalized
+        for indicator in clear_indicators
+    ):
         return {
             "ambiguous": False,
             "question": None
@@ -111,38 +262,5 @@ or the clarification question.
     }
 
 
-def resolve_question(
-    original_question,
-    clarification_question,
-    user_answer
-):
-
-    prompt = f"""
-You are resolving a user's ambiguous question.
-
-Original question:
-{original_question}
-
-Clarification question:
-{clarification_question}
-
-User's clarification:
-{user_answer}
-
-Rewrite the original question by incorporating the user's
-clarification.
-
-The result must be a single, clear natural-language question
-that contains all the information needed to generate SQL.
-
-Do not add unnecessary information.
-
-Return ONLY the rewritten question.
-"""
-
-    return generate_gemini_response(
-    prompt,
-    model="gemini-3.6-flash"
-    ).strip() 
-
-   
+def resolve_question(question):
+    return check_ambiguity(question)

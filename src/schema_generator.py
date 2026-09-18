@@ -1,4 +1,4 @@
-from src.gemini_client import generate_gemini_response
+from src.ollama_client import generate_ollama_response
 
 def generate_create_table_sql(question):
 
@@ -24,13 +24,12 @@ Rules:
 Return only the SQL statement.
 """
 
-    response = generate_gemini_response(
+    response = generate_ollama_response(
         prompt,
-        model="gemini-3.6-flash"
     ).strip()
 
 
-    # Remove markdown fences if Gemini adds them
+    # Remove markdown fences if Ollama adds them
     if sql.startswith("```sql"):
         sql = sql[6:]
 

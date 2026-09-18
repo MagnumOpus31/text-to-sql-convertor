@@ -1,6 +1,6 @@
 # Natural Language to SQL Converter
 
-A Python-based Text-to-SQL system that converts natural language questions into SQL queries using Google's Gemini API. The system includes clarification, typo correction, intent detection, SQL validation, semantic checking, and safety mechanisms for database write operations.
+A Python-based Text-to-SQL system that converts natural language questions into SQL queries using a local Qwen 2.5 3B model through Ollama.
 
 ## Features
 
@@ -278,8 +278,9 @@ english-to-sql-converter/
 
 * **Python**
 * **SQLite**
-* **Google Gemini API**
-* **Google GenAI Python SDK**
+* **Qwen 2.5 3B via Ollama**
+* **Ollama**
+* **Qwen 2.5 3B**
 * **Pydantic**
 * **python-dotenv**
 
@@ -310,13 +311,12 @@ Install the dependencies:
 pip install -r requirements.txt
 ```
 
-Create a `.env` file in the project root:
+Ollama is used to run the local Qwen 2.5 3B language model, so no external LLM API key is required.
 
-```env
-GEMINI_API_KEY=your_api_key_here
-```
+Make sure Ollama is installed and running:
 
-The API key should never be committed to GitHub.
+```bash
+ollama serve
 
 ## Running the Application
 
@@ -353,11 +353,11 @@ Example evaluation categories include:
 * Ambiguous questions
 * Clarification and question resolution
 
-API rate limits may affect evaluation runs when using the Gemini API free tier.
+The project uses a local Qwen 2.5 3B model through Ollama, so LLM requests are not dependent on an external API rate limit.
 
 ## Security
 
-The project uses a `.env` file for the Gemini API key.
+No `.env` file or external LLM API key is required. The application communicates with the locally running Ollama server.
 
 Sensitive files and local database files are excluded through `.gitignore`:
 

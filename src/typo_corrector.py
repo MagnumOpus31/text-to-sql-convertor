@@ -1,4 +1,4 @@
-from src.gemini_client import generate_gemini_response
+from src.ollama_client import generate_ollama_response
 
 
 def correct_typos(question):
@@ -17,8 +17,7 @@ User question:
 {question}
 """
 
-    response = generate_gemini_response(
+    response = generate_ollama_response(
         prompt,
-        model="gemini-3.6-flash"
     ).strip()
 

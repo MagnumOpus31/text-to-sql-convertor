@@ -78,7 +78,7 @@ def check_operation_safety(sql):
         }
 
     # --------------------------------
-    # Get schema
+    # Get database schema
     # --------------------------------
 
     schema = get_database_schema()
@@ -112,12 +112,29 @@ def check_operation_safety(sql):
         }
 
     where_clause = where_match.group(1).strip()
+    where_lower = where_clause.lower()
 
     # --------------------------------
-    # Detect obviously broad conditions
+    # Detect conditions affecting all rows
     # --------------------------------
 
-    if where_clause.lower() in ["1=1", "true", "'1'='1'"]:
+    # Examples:
+    # WHERE 1
+    # WHERE TRUE
+    # WHERE 1=1
+    # WHERE 1 = 1
+    # WHERE TRUE = TRUE
+    # WHERE '1'='1'
+
+    normalized_where = re.sub(r"\s+", "", where_lower)
+
+    if normalized_where in [
+        "1",
+        "true",
+        "1=1",
+        "true=true",
+        "'1'='1'"
+    ]:
 
         return {
             "safe": False,
@@ -129,28 +146,69 @@ def check_operation_safety(sql):
         }
 
     # --------------------------------
-    # Basic safety classification
+    # Block subqueries
     # --------------------------------
 
-    # Conditions using AND/OR or IN may affect
-    # multiple records, so mark them for stronger warning.
+    if re.search(r"\bselect\b", where_lower):
 
-    if (
-        " or " in where_clause.lower()
-        or " in " in where_clause.lower()
-    ):
+        return {
+            "safe": False,
+            "affected_rows": None,
+            "message": (
+                "DANGEROUS OPERATION: "
+                "Subqueries in UPDATE/DELETE conditions "
+                "are not allowed because they may affect "
+                "multiple records."
+            )
+        }
+
+    # --------------------------------
+    # Block OR conditions
+    # --------------------------------
+
+    if re.search(r"\bor\b", where_lower):
 
         return {
             "safe": False,
             "affected_rows": None,
             "message": (
                 "WARNING: This operation may affect "
-                "multiple records."
+                "multiple records because it contains OR."
             )
         }
 
     # --------------------------------
-    # Default
+    # Block IN conditions
+    # --------------------------------
+
+    if re.search(r"\bin\s*\(", where_lower):
+
+        return {
+            "safe": False,
+            "affected_rows": None,
+            "message": (
+                "WARNING: This operation may affect "
+                "multiple records because it contains IN."
+            )
+        }
+
+    # --------------------------------
+    # Block BETWEEN conditions
+    # --------------------------------
+
+    if re.search(r"\bbetween\b", where_lower):
+
+        return {
+            "safe": False,
+            "affected_rows": None,
+            "message": (
+                "WARNING: This operation may affect "
+                "multiple records because it contains BETWEEN."
+            )
+        }
+
+    # --------------------------------
+    # Default: condition appears specific
     # --------------------------------
 
     return {

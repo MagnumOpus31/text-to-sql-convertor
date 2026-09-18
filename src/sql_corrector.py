@@ -1,4 +1,4 @@
-from src.gemini_client import generate_gemini_response
+from src.ollama_client import generate_ollama_response
 
 
 
@@ -54,9 +54,8 @@ Do not use markdown.
 Do not explain anything.
 """
 
-    response = generate_gemini_response(
+    response = generate_ollama_response(
         prompt,
-        model="gemini-3.6-flash",
     ).strip()
 
 

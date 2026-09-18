@@ -1,6 +1,6 @@
 
 import json
-from src.gemini_client import generate_gemini_response
+from src.ollama_client import generate_ollama_response
 
 
 
@@ -168,9 +168,8 @@ User question:
 {question}
 """
 
-    result = generate_gemini_response(
+    result = generate_ollama_response(
         prompt,
-        model="gemini-3.6-flash",
     ).strip()
 
     if result.startswith("```json"):

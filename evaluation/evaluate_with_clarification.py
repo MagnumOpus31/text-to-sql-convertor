@@ -82,7 +82,7 @@ def evaluate_with_clarification():
 
         else:
 
-            print("Calling Gemini for clarification...")
+            print("Calling Qwen for clarification...")
 
             try:
                 clarification_result = check_ambiguity(question)
@@ -95,7 +95,7 @@ def evaluate_with_clarification():
                 )
 
             except Exception as e:
-                print("Gemini clarification error:", e)
+                print("Qwen clarification error:", e)
                 print("Skipping this test.")
                 continue
 
@@ -142,7 +142,7 @@ def evaluate_with_clarification():
 
         else:
 
-            print("\nCalling Gemini for SQL generation...")
+            print("\nCalling Qwen for SQL generation...")
 
             try:
                 generated_sql = generate_sql(resolved_question)
@@ -155,7 +155,7 @@ def evaluate_with_clarification():
                 )
 
             except Exception as e:
-                print("Gemini SQL generation error:", e)
+                print("Qwen SQL generation error:", e)
                 print("Skipping this test.")
                 continue
 

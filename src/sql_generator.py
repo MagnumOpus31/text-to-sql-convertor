@@ -1,4 +1,4 @@
-from src.gemini_client import generate_gemini_response
+from src.ollama_client import generate_ollama_response
 
 from src.database import get_database_schema
 
@@ -86,12 +86,11 @@ Return ONLY the SQL query.
 """
 
     # --------------------------------
-    # Call Gemini
+    # Call local Qwen
     # --------------------------------
 
-    response =generate_gemini_response(
+    response =generate_ollama_response(
         prompt,
-        model="gemini-3.6-flash"
     ).strip()
 
     sql = response

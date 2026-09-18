@@ -1,20 +1,6 @@
-import os
 
-from dotenv import load_dotenv
-from google import genai
-
+from src.gemini_client import generate_gemini_response
 from src.database import get_database_schema
-
-
-load_dotenv()
-
-api_key = os.getenv("GEMINI_API_KEY")
-
-if not api_key:
-    raise ValueError("GEMINI_API_KEY was not found in the .env file.")
-
-client = genai.Client(api_key=api_key)
-
 
 def check_ambiguity(question):
 
@@ -102,12 +88,12 @@ or the clarification question.
     # Call Gemini
     # --------------------------------
 
-    response = client.models.generate_content(
+    result = generate_gemini_response(
+        prompt,
         model="gemini-3.6-flash",
-        contents=prompt
-    )
+    ).strip();
 
-    result = response.text.strip()
+    
 
     # --------------------------------
     # Process result
@@ -154,9 +140,9 @@ Do not add unnecessary information.
 Return ONLY the rewritten question.
 """
 
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt
-    )
+    return generate_gemini_response(
+    prompt,
+    model="gemini-3.6-flash"
+    ).strip() 
 
-    return response.text.strip()
+   

@@ -1,19 +1,7 @@
-import os
-
-from dotenv import load_dotenv
-from google import genai
+from src.gemini_client import generate_gemini_response
 
 from src.database import get_database_schema
 
-
-load_dotenv()
-
-api_key = os.getenv("GEMINI_API_KEY")
-
-if not api_key:
-    raise ValueError("GEMINI_API_KEY was not found in the .env file.")
-
-client = genai.Client(api_key=api_key)
 
 
 def generate_insert_sql(question):
@@ -56,12 +44,11 @@ Rules:
 Return ONLY the SQL query.
 """
 
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt
-    )
+    response = generate_gemini_response(
+        prompt,
+        model="gemini-3.6-flash"
+    ).strip()
 
-    sql = response.text.strip()
 
     if sql.startswith("```sql"):
         sql = sql[6:]

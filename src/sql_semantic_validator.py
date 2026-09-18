@@ -1,16 +1,7 @@
-import os
-from dotenv import load_dotenv
-from google import genai
 import json
+from src.gemini_client import generate_gemini_response
 
-load_dotenv()
 
-api_key = os.getenv("GEMINI_API_KEY")
-
-if not api_key:
-    raise ValueError("GEMINI_API_KEY was not found in the .env file.")
-
-client = genai.Client(api_key=api_key)
 
 
 def validate_semantics(question, sql):
@@ -70,12 +61,12 @@ or:
 }}
 """
 
-    response = client.models.generate_content(
+    response = generate_gemini_response(
+        prompt,
         model="gemini-3.6-flash",
-        contents=prompt
-    )
+    ).strip()
 
-    result = response.text.strip()
+    result = response
 
     if result.startswith("```json"):
         result = result[7:]

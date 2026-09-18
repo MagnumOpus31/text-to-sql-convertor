@@ -1,18 +1,7 @@
-import os
+
 import json
+from src.gemini_client import generate_gemini_response
 
-from dotenv import load_dotenv
-from google import genai
-
-
-load_dotenv()
-
-api_key = os.getenv("GEMINI_API_KEY")
-
-if not api_key:
-    raise ValueError("GEMINI_API_KEY was not found in the .env file.")
-
-client = genai.Client(api_key=api_key)
 
 
 def detect_intent(question):
@@ -45,7 +34,7 @@ The user wants to add new records/data into an existing table.
 UPDATE:
 The user wants to modify existing records/data in an existing table.
 
-DELETE:
+
 DELETE:
 The user wants to remove existing records/data from an existing table.
 
@@ -179,12 +168,10 @@ User question:
 {question}
 """
 
-    response = client.models.generate_content(
+    result = generate_gemini_response(
+        prompt,
         model="gemini-3.6-flash",
-        contents=prompt
-    )
-
-    result = response.text.strip()
+    ).strip()
 
     if result.startswith("```json"):
         result = result[7:]

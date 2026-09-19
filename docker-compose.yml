@@ -1,0 +1,26 @@
+services:
+
+  backend:
+    build: .
+    container_name: text-to-sql-backend
+    ports:
+      - "8000:8000"
+    environment:
+      OLLAMA_URL: http://host.docker.internal:11434/api/generate
+      OLLAMA_MODEL: qwen2.5:3b
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build: .
+    container_name: text-to-sql-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      API_URL: http://backend:8000
+    depends_on:
+      - backend
+    command: >
+      streamlit run app.py
+      --server.address=0.0.0.0
+      --server.port=8501

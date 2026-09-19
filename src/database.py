@@ -1,6 +1,16 @@
+import os
 import sqlite3
 
-DATABASE_PATH = "data/database.db"
+
+BASE_DIR = os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))
+)
+
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+os.makedirs(DATA_DIR, exist_ok=True)
+
+DATABASE_PATH = os.path.join(DATA_DIR, "database.db")
 
 
 def get_connection():
@@ -125,6 +135,7 @@ def insert_sample_data():
 
     print("Sample data inserted successfully!")
 
+
 def execute_query(sql):
     connection = get_connection()
     cursor = connection.cursor()
@@ -134,24 +145,27 @@ def execute_query(sql):
 
         results = cursor.fetchall()
 
-        column_names = [description[0] for description in cursor.description]
+        column_names = [
+            description[0]
+            for description in cursor.description
+        ]
 
         return column_names, results
 
     finally:
-        connection.close
+        connection.close()
+
 
 def execute_write_query(sql):
+    connection = get_connection()
 
-    conn = sqlite3.connect(DATABASE_PATH)
-
-    cursor = conn.cursor()
+    cursor = connection.cursor()
 
     cursor.execute(sql)
 
-    conn.commit()
+    connection.commit()
+    connection.close()
 
-    conn.close()
 
 def execute_schema_query(sql):
     connection = get_connection()
@@ -161,6 +175,7 @@ def execute_schema_query(sql):
 
     connection.commit()
     connection.close()
+
 
 def get_database_schema():
     connection = get_connection()

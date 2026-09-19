@@ -1,209 +1,174 @@
-# Natural Language to SQL Converter
+**# Natural Language to SQL Converter**
 
-A full-stack Text-to-SQL application that converts natural language questions into SQL queries using an LLM, validates the generated SQL, detects ambiguity, and executes the query against a SQLite database.
+A full-stack **Text-to-SQL application** that converts natural language questions into SQL queries using an LLM, validates the generated SQL, detects ambiguity, and executes the query against a SQLite database.
 
-The project supports both local development with Ollama/Qwen and public deployment using the Groq API.
+The application supports **local development using Ollama and Qwen 2.5 3B** and **public deployment using the Groq API with Qwen**.
 
-## Live Demo
+**## Live Demo**
 
 The application is deployed on Render:
 
 https://english-to-sql-converter.onrender.com/
 
-## Overview
+**## Features**
 
-The goal of this project is to allow users to interact with a relational database using natural language instead of manually writing SQL.
+* **Natural Language → SQL** — Converts user questions into SQL queries.
 
-For example:
+* **Clarification Engine** — Detects ambiguous questions and asks the user for clarification before generating SQL.
+
+* **Local Typo Correction** — Corrects common spelling mistakes before processing the question.
+
+* **Intent Detection** — Identifies the requested operation:
+
+  * `READ`
+
+  * `CREATE_TABLE`
+
+  * `INSERT`
+
+  * `UPDATE`
+
+  * `DELETE`
+
+* **Dynamic Schema Detection** — Retrieves the current database schema instead of relying only on a hardcoded schema.
+
+* **SQL Validation** — Checks whether generated SQL follows the expected syntax and operation rules.
+
+* **Semantic Validation** — Checks whether the generated query is compatible with the available database schema.
+
+* **SQL Correction** — Attempts to correct invalid generated SQL before execution.
+
+* **Complex SQL Generation** — Supports multi-table queries using `JOIN`, `GROUP BY`, `ORDER BY`, `LIMIT`, and aggregate functions such as `SUM`, `COUNT`, `AVG`, `MAX`, and `MIN`.
+
+* **CRUD Operations** — Supports reading, inserting, updating, and deleting database records.
+
+* **Schema Creation** — Can generate and execute `CREATE TABLE` statements.
+
+* **Operation Safety** — Protects against dangerous `UPDATE` and `DELETE` operations.
+
+* **Confirmation System** — Requires confirmation before executing database-changing operations.
+
+* **Evaluation Framework** — Includes test cases for evaluating SQL generation and the clarification engine.
+
+* **Automated Tests** — Individual components have dedicated test files.
+
+* **FastAPI Backend** — Provides an API layer between the frontend and the Text-to-SQL processing pipeline.
+
+* **Streamlit Frontend** — Provides a simple web interface for interacting with the application.
+
+* **Docker Support** — Includes Docker and Docker Compose configuration for local development.
+
+* **Cloud Deployment** — The application is deployed using Docker on Render.
+
+**## System Workflow**
 
 ```text
-Show me the top 3 customers by total spending
+User Question
 
-can be converted into:
+      ↓
 
-SELECT
-    c.name,
-    SUM(o.total_amount) AS total_spending
-FROM customers c
-JOIN orders o
-    ON c.customer_id = o.customer_id
-GROUP BY c.customer_id, c.name
-ORDER BY total_spending DESC
-LIMIT 3;
+Streamlit Frontend
 
-The system then validates and executes the generated SQL and displays the results.
+      ↓
 
-Key Features
-Natural Language → SQL
+FastAPI Backend
 
-Converts natural language questions into SQL queries.
-
-Ambiguity Detection and Clarification
-
-Detects questions where the user's intended meaning is unclear.
-
-For example:
-
-Show me the top customers
-
-The system asks for clarification instead of making an arbitrary assumption:
-
-What metric should be used to rank the top customers?
-
-The user can then specify:
-
-Total spending
-
-and the system can generate the appropriate SQL query.
+      ↓
 
 Local Typo Correction
 
-Corrects common spelling mistakes before processing the question.
+      ↓
+
+Clarification / Ambiguity Detection
+
+      ↓
+
+Resolved Question
+
+      ↓
 
 Intent Detection
 
-Identifies the requested database operation:
+      ↓
 
-READ
-CREATE_TABLE
-INSERT
-UPDATE
-DELETE
-Dynamic Schema Detection
+┌─────────────────────────────────────┐
+│ READ                                │
+│ CREATE TABLE                        │
+│ INSERT                              │
+│ UPDATE                              │
+│ DELETE                              │
+└─────────────────────────────────────┘
 
-Retrieves the current database schema so that SQL generation can be based on the available tables and columns.
+      ↓
+
+Schema Detection
+
+      ↓
+
+SQL Generation
+
+      ↓
 
 SQL Validation
 
-Validates generated SQL against the expected operation and SQL rules.
+      ↓
 
 Semantic Validation
 
-Checks whether the generated SQL is compatible with the available database schema and expected query structure.
+      ↓
 
-SQL Correction
+Safety Check
 
-Attempts to correct invalid generated SQL before execution.
+      ↓
 
-Complex SQL Generation
+User Confirmation (write operations)
 
-The system can generate queries involving:
+      ↓
 
-JOIN
-Multiple-table relationships
-GROUP BY
-ORDER BY
-LIMIT
-Aggregations such as SUM, COUNT, AVG, MAX, and MIN
-Filtering with WHERE
-Multi-step relational queries
+Database Execution
 
-Example:
+      ↓
 
-Show me the top 3 customers by total spending
+Result
 
-can result in a query using:
+## Example
 
-JOIN + SUM + GROUP BY + ORDER BY + LIMIT
-CRUD Operations
+### Simple Query
 
-Supports:
+User:
 
-Reading data
-Creating tables
-Inserting records
-Updating records
-Deleting records
-Operation Safety
-
-Database-changing operations are checked before execution.
-
-The system is designed to prevent dangerous operations such as unrestricted:
-
-DELETE FROM customers;
-
-or:
-
-UPDATE customers
-SET city = 'Mumbai';
-Confirmation System
-
-Database-changing operations require confirmation before execution.
-
-Evaluation Framework
-
-The project contains an evaluation framework for testing SQL generation and comparing behavior with and without clarification.
-
-Automated Tests
-
-Individual components have dedicated test files for functionality such as clarification, intent detection, typo correction, validation, and operation safety.
-
-System Architecture
-                         User
-                           |
-                           v
-                 Streamlit Frontend
-                           |
-                           v
-                    FastAPI Backend
-                           |
-                           v
-                  Local Typo Correction
-                           |
-                           v
-               Clarification / Ambiguity
-                           |
-                           v
-                    Intent Detection
-                           |
-                           v
-                   Schema Detection
-                           |
-                           v
-                    SQL Generation
-                           |
-                           v
-                   SQL Validation
-                           |
-                           v
-                Semantic Validation
-                           |
-                           v
-                    Safety Checks
-                           |
-                           v
-              User Confirmation
-               (write operations)
-                           |
-                           v
-                  SQLite Database
-                           |
-                           v
-                       Results
-Example Queries
-1. Simple Query
-User
 Show me all customers from Mumbai
-Generated SQL
+
+Generated SQL:
+
 SELECT *
 FROM customers
 WHERE city = 'Mumbai';
-2. Ambiguous Query
-User
+
+### Ambiguous Query
+
+User:
+
 Show me the top customers
 
-The system detects that "top" is ambiguous and asks:
+The clarification engine identifies the ambiguity and asks:
 
 What metric should be used to rank the top customers?
 
-The user can respond:
+If the user answers:
 
 Total spending
 
-The system can then generate an appropriate aggregation query.
+The question is resolved to:
 
-3. JOIN Query
-User
+Show me the top customers ranked by total spending.
+
+The system can then generate the appropriate SQL query.
+
+### JOIN Query
+
+User:
+
 Show me the names of customers who bought laptops
 
 The system can identify the relationship between:
@@ -218,10 +183,14 @@ products
 
 and generate a multi-table JOIN query.
 
-4. Complex Aggregation Query
-User
+### Complex Aggregation Query
+
+User:
+
 Show me the top 3 customers by total spending
-Generated SQL
+
+Generated SQL:
+
 SELECT
     c.name,
     SUM(o.total_amount) AS total_spending
@@ -232,79 +201,90 @@ GROUP BY c.customer_id, c.name
 ORDER BY total_spending DESC
 LIMIT 3;
 
-This demonstrates:
+This query demonstrates:
 
 JOIN
 SUM
 GROUP BY
 ORDER BY
 LIMIT
-5. INSERT
 
-Example:
+### INSERT
+
+User:
 
 Add a customer named Amit from Mumbai
 
-The system can generate an INSERT statement and request confirmation before execution.
+The system generates an INSERT statement and asks for confirmation before execution.
 
-6. UPDATE
+### UPDATE
 
-Example:
+User:
 
 Update Rahul's city to Pune
 
-The generated UPDATE statement is checked for a sufficiently specific condition before execution.
+The system generates an UPDATE statement and checks that it contains a sufficiently specific WHERE clause before execution.
 
-7. DELETE
+### DELETE
 
-Example:
+User:
 
 Delete the customer with customer ID 1
 
-The system generates a targeted DELETE statement and requires confirmation before execution.
+The system generates:
 
-Safety Mechanisms
+DELETE FROM customers
+WHERE customer_id = 1;
 
-Read-only queries and database-changing operations are handled differently.
+The operation is checked for safety and requires confirmation.
 
-Potentially dangerous queries such as:
+## Safety Mechanisms
+
+Database-changing operations are treated differently from read-only queries.
+
+The system blocks or warns about potentially dangerous operations such as:
 
 DELETE FROM customers;
 
-or:
+and:
 
 UPDATE customers
 SET city = 'Mumbai';
 
-are checked before execution.
-
-The system also checks for potentially unsafe conditions such as:
+It also detects conditions such as:
 
 WHERE 1=1
 
-and unrestricted or overly broad modification operations.
+and potentially broad modification conditions.
 
-This reduces the risk of accidental large-scale database modifications.
+This helps prevent accidental modification or deletion of large portions of the database.
 
-Database Schema
+## Database Schema
 
-The demonstration SQLite database contains the following tables.
+The demonstration SQLite database contains the following tables:
 
-customers
+### customers
+
 customer_id
 name
 city
-orders
+
+### orders
+
 order_id
 customer_id
 order_date
 total_amount
-products
+
+### products
+
 product_id
 product_name
 category
 price
-order_items
+
+### order_items
+
 order_id
 product_id
 quantity
@@ -313,8 +293,11 @@ unit_price
 The relationships allow the system to generate multi-table queries such as:
 
 customers → orders → order_items → products
-Project Structure
+
+## Project Structure
+
 english-to-sql-converter/
+
 │
 ├── api/
 │   └── main.py
@@ -348,6 +331,7 @@ english-to-sql-converter/
 │   └── with_clarification.json
 │
 ├── tests/
+│   └── component test files
 │
 ├── data/
 │   └── database.db
@@ -361,41 +345,55 @@ english-to-sql-converter/
 ├── .dockerignore
 ├── .gitignore
 └── README.md
-Technologies Used
+
+Note: The project contains dedicated test files for individual components. The current repository structure may evolve as the project is further cleaned up.
+
+## Technologies Used
+
 Python
 FastAPI
 Streamlit
 SQLite
+Qwen 2.5 3B
+Ollama
+Groq API
 Pydantic
 Requests
 Docker
 Docker Compose
-Ollama
-Qwen
-Groq API
 Render
-LLM Providers
-Local Development
 
-The application can use:
+## LLM Providers
+
+### Local Development
+
+The local development setup uses:
 
 Ollama
     ↓
 Qwen 2.5 3B
 
-This allows local development without requiring an external LLM API.
+This allows the application to run locally without requiring an external LLM API key.
 
-Deployment
+### Deployment
 
-The deployed version uses:
+The deployed application uses:
 
 Groq API
     ↓
-Qwen model
+Qwen
 
-The provider and model are configurable through environment variables.
+The LLM provider and model are configurable through environment variables.
 
-Local Installation
+## Engineering Decisions
+
+Major architecture and technology decisions are documented in:
+
+decision.md
+
+The document contains the reasoning and trade-offs behind the project's design choices.
+
+## Installation
 
 Clone the repository:
 
@@ -411,37 +409,51 @@ Activate it on Windows:
 
 venv\Scripts\activate
 
-Install dependencies:
+Install the dependencies:
 
 pip install -r requirements.txt
-Running Locally
 
-For local development with Ollama, install Ollama and make sure the required model is available.
+For local development, Ollama is used to run the Qwen 2.5 3B language model.
 
-Start Ollama:
+Make sure Ollama is installed and running:
 
 ollama serve
 
-The application can then be started using the local configuration.
+Make sure the required model is available:
 
-The Streamlit frontend communicates with the FastAPI backend.
+ollama pull qwen2.5:3b
 
-Running with Docker
+## Running the Application
 
-The project includes Docker configuration for running the application locally.
+The local application consists of a FastAPI backend and a Streamlit frontend.
 
-Build and start the containers:
+Start the FastAPI backend:
+
+uvicorn api.main:app --reload
+
+In another terminal, start the Streamlit frontend:
+
+streamlit run app.py
+
+The Streamlit interface can then be opened in the browser.
+
+## Running with Docker
+
+The project also includes Docker configuration for local development.
+
+Build and start the application:
 
 docker compose up --build
 
-The services include:
+The Docker setup runs:
 
 FastAPI Backend
         +
 Streamlit Frontend
         +
 Ollama running on the host
-Deployment
+
+## Deployment
 
 The application is deployed using:
 
@@ -455,23 +467,33 @@ FastAPI + Streamlit
    ↓
 Groq API
 
-The deployment uses a separate deployment Dockerfile:
+The deployment uses:
 
 Dockerfile.deploy
 
-The deployed application is available at:
+The application is available at:
 
 https://english-to-sql-converter.onrender.com/
 
-Environment variables are used for deployment configuration and API credentials.
+The deployed application uses environment variables such as:
 
-Testing
+LLM_PROVIDER
+GROQ_MODEL
+GROQ_API_KEY
+API_URL
 
-Individual component tests can be executed using commands such as:
+API credentials are stored as environment variables and are not committed to the repository.
+
+## Running Tests
+
+Individual component tests can be run with:
 
 python test_clarification.py
+
 python test_intent_detector.py
+
 python test_local_typo_corrector.py
+
 python test_operation_safety.py
 
 Additional tests are available for:
@@ -480,67 +502,52 @@ SQL generation
 SQL validation
 Semantic validation
 Schema handling
-INSERT
-UPDATE
-DELETE
+INSERT operations
+UPDATE operations
+DELETE operations
 Clarification
 Operation safety
-Evaluation
+
+## Evaluation
 
 The project includes an evaluation framework for comparing SQL generation with and without the clarification engine.
 
-Evaluation categories include:
+Example evaluation categories include:
 
 Basic database queries
 Location-based filtering
 Aggregation
 Ambiguous questions
-Clarification
-Question resolution
+Clarification and question resolution
 SQL generation
 
 The evaluation framework helps identify cases where clarification improves the interpretation of natural language queries.
 
-Engineering Decisions
-
-Major architecture and technology decisions are documented in:
-
-decision.md
-
-The document contains the reasoning and trade-offs behind the project's design choices.
-
-Security and Configuration
+## Security
 
 API credentials are stored using environment variables and are not included in the repository.
 
-For example:
-
-GROQ_API_KEY
-LLM_PROVIDER
-GROQ_MODEL
-API_URL
-
-Sensitive local files are excluded through .gitignore.
-
-Example:
+Sensitive files and local database files are excluded through .gitignore:
 
 .env
 data/*.db
 __pycache__/
 *.pyc
 venv/
-Future Improvements
+
+## Future Improvements
 
 Possible future improvements include:
 
 Supporting additional SQL dialects
 Improving natural-language clarification
-Expanding evaluation datasets
-Improving SQL generation accuracy
+Adding more comprehensive evaluation datasets
+Improving query-generation accuracy
 Supporting additional database systems
-Improving handling of complex database relationships
+Supporting more complex database relationships
 Adding more advanced query verification
-Author
+
+## Author
 
 Jinay Shah
 

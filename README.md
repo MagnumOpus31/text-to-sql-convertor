@@ -284,6 +284,12 @@ english-to-sql-converter/
 * **Pydantic**
 * **python-dotenv**
 
+## Engineering Decisions
+
+Major architecture and technology decisions are documented in
+[`decision.md`](decision.md), including the reasoning and trade-offs behind
+the project's design choices.
+
 ## Installation
 
 Clone the repository:

@@ -3,7 +3,11 @@ from fastapi import FastAPI, HTTPException
 from api.schemas import QueryRequest, QueryResponse
 
 from src.clarification import check_ambiguity
-from src.database import execute_query
+from src.database import (
+    execute_query,
+    create_tables,
+    insert_sample_data
+)
 from src.local_typo_corrector import correct_typos
 from src.intent_detector import detect_intent
 
@@ -34,6 +38,16 @@ app = FastAPI(
 )
 
 
+@app.on_event("startup")
+def initialize_database():
+    create_tables()
+
+    try:
+        insert_sample_data()
+    except Exception:
+        pass
+
+
 @app.get("/")
 def root():
     return {
@@ -60,7 +74,6 @@ def process_query(request: QueryRequest):
 
         corrected_question = correct_typos(question)
 
-
         # ----------------------------------------------------
         # 2. Clarification
         # ----------------------------------------------------
@@ -76,14 +89,12 @@ def process_query(request: QueryRequest):
                 clarification_question=clarification["question"]
             )
 
-
         # ----------------------------------------------------
         # 3. Intent detection
         # ----------------------------------------------------
 
         intent_result = detect_intent(corrected_question)
         intent = intent_result["intent"]
-
 
         # ----------------------------------------------------
         # 4. CREATE TABLE
@@ -116,7 +127,6 @@ def process_query(request: QueryRequest):
                 message=message
             )
 
-
         # ----------------------------------------------------
         # 5. INSERT
         # ----------------------------------------------------
@@ -147,7 +157,6 @@ def process_query(request: QueryRequest):
                 sql=sql,
                 message=message
             )
-
 
         # ----------------------------------------------------
         # 6. UPDATE
@@ -192,7 +201,6 @@ def process_query(request: QueryRequest):
                 message=safety_result["message"]
             )
 
-
         # ----------------------------------------------------
         # 7. DELETE
         # ----------------------------------------------------
@@ -236,7 +244,6 @@ def process_query(request: QueryRequest):
                 message=safety_result["message"]
             )
 
-
         # ----------------------------------------------------
         # 8. READ
         # ----------------------------------------------------
@@ -244,7 +251,6 @@ def process_query(request: QueryRequest):
         elif intent == "READ":
 
             sql = generate_sql(corrected_question)
-
 
             # SQL validation
             valid, message = validate_sql(sql)
@@ -268,7 +274,6 @@ def process_query(request: QueryRequest):
                         sql=sql,
                         message=message
                     )
-
 
             # Semantic validation
             semantic_result = validate_semantics(
@@ -310,7 +315,6 @@ def process_query(request: QueryRequest):
                         sql=sql,
                         message=corrected_semantic["reason"]
                     )
-
 
             # Database execution
             try:
@@ -367,7 +371,6 @@ def process_query(request: QueryRequest):
                         message=str(second_error)
                     )
 
-
             # Convert SQLite result into JSON-compatible objects
             formatted_results = [
                 dict(zip(columns, row))
@@ -384,7 +387,6 @@ def process_query(request: QueryRequest):
                 message="Query executed successfully."
             )
 
-
         # ----------------------------------------------------
         # Unsupported intent
         # ----------------------------------------------------
@@ -398,7 +400,6 @@ def process_query(request: QueryRequest):
                 intent=intent,
                 message=f"Unsupported intent: {intent}"
             )
-
 
     except Exception as error:
 
